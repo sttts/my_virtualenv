@@ -46,7 +46,7 @@ help ()
 find_free_port ()
 {
     port=$1
-    while ss -l -t -n "( sport = :$port )" 2>/dev/null|grep -q LISTEN; do
+    while nc -z localhost $port &>/dev/null; do
         port=$(( $port + 1 ))
     done
     echo $port
@@ -130,7 +130,7 @@ fi
 if [ -x /usr/bin/pwgen ]; then
     export MYSQL_PASS=$(pwgen 20 1)
 else
-    export MYSQL_PASS=$(dd if=/dev/urandom bs=1k count=1 2>/dev/null | md5sum - | awk '{ print $1 }')
+    export MYSQL_PASS=$(dd if=/dev/urandom bs=1k count=1 2>/dev/null | md5 -r | awk '{ print $1 }')
 fi
 cat >> $PWFILE <<EOF
 [client]
@@ -168,8 +168,8 @@ fi
 # we chdir to / so programs don't throw "could not change directory to ..."
 (
 	cd /
-	mysql_install_db --defaults-file=$MYSQL_HOME/my.cnf --user=$MYSQL_USER --basedir=/usr --datadir=$MYDATADIR --socket=$MYSQL_UNIX_PORT --force >/dev/null
-	$MYSQLD --defaults-file=$MYSQL_HOME/my.cnf >$LOGDIR/mysql.log 2>&1 &
+	mysql_install_db --defaults-file=$MYSQL_HOME/my.cnf --user=$MYSQL_USER --basedir=/usr/local/Cellar/mysql/5.6.20 --datadir=$MYDATADIR --socket=$MYSQL_UNIX_PORT --force >/dev/null
+	$MYSQLD --defaults-file=$MYSQL_HOME/my.cnf --basedir=/usr/local/Cellar/mysql/5.6.20 >$LOGDIR/mysql.log 2>&1 &
 
 	# 6s was reported in #352070 to be too few when using ndbcluster
 	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
